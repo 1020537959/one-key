@@ -5,6 +5,7 @@ import { UserModule } from './modules/user/user.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config/index';
 import { PrismaModule } from 'nestjs-prisma';
+import { RedisModule } from '@nestjs-modules/ioredis';
 
 @Module({
   imports: [
@@ -28,6 +29,23 @@ import { PrismaModule } from 'nestjs-prisma';
                 url: `mysql://${username}:${password}@${host}:${port}/${database}?connection_limit=15`,
               },
             },
+          },
+        };
+      },
+      inject: [ConfigService],
+    }),
+    RedisModule.forRootAsync({
+      useFactory: async (configService: ConfigService) => {
+        return {
+          type: 'single',
+          config: {
+            url: `redis://:${configService.get(
+              'redis.serviceCenter.password',
+            )}@${configService.get(
+              'redis.serviceCenter.host',
+            )}:${configService.get(
+              'redis.serviceCenter.port',
+            )}/${configService.get('redis.serviceCenter.db')}`,
           },
         };
       },

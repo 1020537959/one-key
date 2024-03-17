@@ -5,3 +5,13 @@ db:
     password: "123456"
     database: "one_key"
     port: 3306
+
+redis:
+  serviceCenter:
+    host: "127.0.0.1"
+    port: 6379
+    password: ""
+    db: 0
+
+etherscan:
+  apikey: "MPSF6BYBM41UU565TX3CK6TWVNDMABKHH5"
