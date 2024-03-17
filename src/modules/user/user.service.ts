@@ -20,6 +20,34 @@ export class UserService {
     @InjectRedis() private readonly redis: Redis,
   ) {}
 
+  /**
+   * 获取 ETH 余额缓存
+   * @param address 用户地址
+   */
+  async _getEthBalanceCache(address: string) {
+    const { ETH_BALANCE } = REDIS;
+    const redisKey = `${ETH_BALANCE.PREFIX}${address}`;
+    return this.redis.get(redisKey);
+  }
+
+  /**
+   * 设置 ETH 余额缓存
+   * @param address 用户地址
+   * @param eth_balance ETH 余额
+   */
+  async _setEthBalanceCache(address: string, eth_balance: string) {
+    const { ETH_BALANCE } = REDIS;
+    const redisKey = `${ETH_BALANCE.PREFIX}${address}`;
+    const min = -10;
+    const max = 10;
+    let randomExpire = Math.floor(Math.random() * (max - min + 1)) + min;
+    const realExpire = ETH_BALANCE.EXPIRE + randomExpire;
+    this.redis.setex(redisKey, realExpire, eth_balance)
+    .catch(err => {
+      console.error(`【${address}】设置余额缓存异常, ${err}`);
+    });
+  }
+
   async create(dto: CreateUserDto) {
     const { name } = dto;
     return this.prisma.user.create({ data: { name } });
@@ -38,10 +66,7 @@ export class UserService {
    */
   async searchEthBalanceV1(dto: SearchEthBalanceDto, user: AuthUser) {
     const { address } = dto;
-    // 引入缓存
-    const { ETH_BALANCE } = REDIS;
-    const redisKey = `${ETH_BALANCE.PREFIX}${address}`;
-    const value = await this.redis.get(redisKey);
+    const value = await this._getEthBalanceCache(address);
     if (value) {
       return { eth_balance: value };
     }
@@ -78,7 +103,7 @@ export class UserService {
           }
           eth_balance = userAddress.eth_balance;
           // 设置缓存
-          this.redis.setex(redisKey, ETH_BALANCE.EXPIRE, eth_balance)
+          this._setEthBalanceCache(address, eth_balance)
             .catch(err => {
               console.error(`【${address}】设置余额缓存异常, ${err}`);
             });
@@ -103,9 +128,7 @@ export class UserService {
       update: { eth_balance },
       create: { address, user_id, eth_balance }
     });
-    const { ETH_BALANCE } = REDIS;
-    const redisKey = `${ETH_BALANCE}${address}`;
-    this.redis.setex(redisKey, ETH_BALANCE.EXPIRE, eth_balance)
+    this._setEthBalanceCache(address, eth_balance)
       .catch(err => {
         console.error(`【${address}】设置余额缓存异常, ${err}`);
       })
