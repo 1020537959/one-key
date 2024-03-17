@@ -1,0 +1,27 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl"]
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model User {
+  id   Int    @id @default(autoincrement())
+  name String @db.VarChar(50)
+
+  @@map("tbl_user")
+}
+
+model UserAddress {
+  id          Int    @id @default(autoincrement())
+  user_id     Int
+  address     String @db.VarChar(50)
+  eth_balance String @default("0") @db.VarChar(50)
+
+  @@unique([user_id, address], map: "uniUserAddress")
+  @@map("tbl_user_address")
+}
