@@ -29,11 +29,17 @@ export class UserService {
     if (!user) throw new HttpException('用户不存在', HttpStatus.NOT_FOUND);
   }
 
-  async searchEthBalance(dto: SearchEthBalanceDto, user: AuthUser) {
+  /**
+   * 根据用户地址查询余额信息 - V1
+   * @description 引入缓存，减少对 ethGetBalance 访问
+   * @param dto 查询余额Dto
+   * @param user 授权用户信息
+   */
+  async searchEthBalanceV1(dto: SearchEthBalanceDto, user: AuthUser) {
     const { address } = dto;
     // 引入缓存
     const { ETH_BALANCE } = REDIS;
-    const redisKey = `${ETH_BALANCE}${address}`;
+    const redisKey = `${ETH_BALANCE.PREFIX}${address}`;
     const value = await this.redis.get(redisKey);
     if (value) {
       return { eth_balance: value };
@@ -46,9 +52,9 @@ export class UserService {
       if (data?.status === '1') {
         eth_balance = data?.result;
       }
-      console.error(`用户地址 ${address} 拉取etherscan余额失败, ${data?.message}`);
+      console.error(`【${address}】拉取etherscan余额失败, ${data?.message}`);
     } catch (err) {
-      console.error(`用户地址 ${address} 拉取etherscan余额异常, ${err}`);
+      console.error(`【${address}】拉取etherscan余额异常, ${err}`);
     }
     if (eth_balance) {
       // 异步更新数据库余额
@@ -57,7 +63,7 @@ export class UserService {
         update: { eth_balance },
         create: { user_id: user.id, address, eth_balance }
       }).catch(err => {
-        console.error(`用户地址 ${address} 更新数据库余额异常, ${err}`);
+        console.error(`【${address}】更新数据库余额异常, ${err}`);
       });
     } else {
         // 获取数据库余额并返回
@@ -70,8 +76,13 @@ export class UserService {
             throw new HttpException('用户地址错误', HttpStatus.NOT_FOUND);
           }
           eth_balance = userAddress.eth_balance;
+          // 设置缓存
+          this.redis.setex(redisKey, ETH_BALANCE.EXPIRE, eth_balance)
+            .catch(err => {
+              console.error(`【${address}】设置余额缓存异常, ${err}`);
+            });
         } catch (err) {
-          console.error(`用户地址 ${address} 获取数据库余额异常, ${err}`);
+          console.error(`【${address}】获取数据库余额异常, ${err}`);
         }
       }
     return { eth_balance };

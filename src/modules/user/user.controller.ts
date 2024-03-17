@@ -8,30 +8,30 @@ import { UserEntity } from './entities/user.entity';
 import { AuthUser } from '../dto/auth-user.dto';
 
 @ApiTags('用户')
-@Controller('v1')
+@Controller()
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @ApiOperation({ summary: '创建' })
-  @Post('users')
+  @Post('v1/users')
   @ApiOkResponseData({ type: UserEntity })
   async create(@Body() dto: CreateUserDto) {
     return this.userService.create(dto);
   }
 
   @ApiOperation({ summary: '详情' })
-  @Get('users/:id')
+  @Get('v1/users/:id')
   @ApiOkResponseData({ type: UserEntity })
   async findOneById(@Param('id') id: number) {
     return this.userService.findOneById(id);
   }
 
-  @ApiOperation({ summary: '根据用户地址查询余额' })
-  @Get('user/eth')
+  @ApiOperation({ summary: '根据用户地址查询余额 - V1' })
+  @Get('v1/user/eth')
   @ApiOkResponseData({ type: SearchEthBalanceResultDto })
-  async searchEthBalance(@Query() dto: SearchEthBalanceDto) {
+  async searchEthBalanceV1(@Query() dto: SearchEthBalanceDto) {
     // TODO 模拟cookie对应的用户信息
     const user: AuthUser = { id: 1, name: '蓝浩楠' };
-    return this.userService.searchEthBalance(dto, user);
+    return this.userService.searchEthBalanceV1(dto, user);
   }
 }
