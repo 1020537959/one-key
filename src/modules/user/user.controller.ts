@@ -30,7 +30,7 @@ export class UserController {
   @Get('v1/user/eth')
   @ApiOkResponseData({ type: SearchEthBalanceResultDto })
   async searchEthBalanceV1(@Query() dto: SearchEthBalanceDto) {
-    // TODO 模拟cookie对应的用户信息
+    // 模拟cookie对应的用户信息
     const user: AuthUser = { id: 1, name: '蓝浩楠' };
     return this.userService.searchEthBalanceV1(dto, user);
   }

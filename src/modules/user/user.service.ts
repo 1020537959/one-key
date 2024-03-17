@@ -8,8 +8,9 @@ import { Redis } from 'ioredis';
 import { REDIS } from "../../common/constants";
 import { URL } from 'url';
 import { ConfigService } from '@nestjs/config';
-import Decimal from 'decimal.js';
 import { AuthUser } from '../dto/auth-user.dto';
+import { OnEvent } from '@nestjs/event-emitter';
+import { HandleEthBalanceEventDto } from '../dto/eth-balance-event.dto';
 
 @Injectable()
 export class UserService {
@@ -88,6 +89,28 @@ export class UserService {
     return { eth_balance };
   }
 
+  /**
+   * 处理 ETH 余额变更事件
+   * @param payload 变更内容
+   */
+  @OnEvent('eth_balance.*')
+  async handleEthBalanceEvent(payload: HandleEthBalanceEventDto) {
+    // 正常类似事件应该会有个解密，验签过程，这里省去
+    console.log('接收到事件', payload);
+    const { address, user_id, eth_balance } = payload;
+    await this.prisma.userAddress.upsert({
+      where: { address },
+      update: { eth_balance },
+      create: { address, user_id, eth_balance }
+    });
+    const { ETH_BALANCE } = REDIS;
+    const redisKey = `${ETH_BALANCE}${address}`;
+    this.redis.setex(redisKey, ETH_BALANCE.EXPIRE, eth_balance)
+      .catch(err => {
+        console.error(`【${address}】设置余额缓存异常, ${err}`);
+      })
+  }
+
   async ethGetBalance(address: string) {
     const apikey: string = this.config.get('etherscan.apikey');
     const url = new URL('/api', 'https://api.etherscan.io');
@@ -98,8 +121,9 @@ export class UserService {
     url.searchParams.append('apikey', apikey);
     const result = await axios.get(url.href, {
       proxy: {
-        host: 'uhisfgy78eu.cfprefer1.xyz',
-        port: 14149
+        // TODO 这里的代理配置有问题
+        host: '51.143.187.127',
+        port: 57750
       }
     });
     return result;

@@ -6,6 +6,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config/index';
 import { PrismaModule } from 'nestjs-prisma';
 import { RedisModule } from '@nestjs-modules/ioredis';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { RedisModule } from '@nestjs-modules/ioredis';
       },
       inject: [ConfigService],
     }),
+    EventEmitterModule.forRoot({ wildcard: true }),
     UserModule
   ],
   controllers: [AppController],
