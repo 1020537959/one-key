@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UserModule } from './modules/user/user.module';
+import { userUserModule } from './modules/user-address/user-address.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config/index';
 import { PrismaModule } from 'nestjs-prisma';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { SharedModule } from './modules/shared/shared.modules';
 
 @Module({
   imports: [
@@ -52,8 +53,9 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
       },
       inject: [ConfigService],
     }),
+    SharedModule,
     EventEmitterModule.forRoot({ wildcard: true }),
-    UserModule
+    userUserModule
   ],
   controllers: [AppController],
   providers: [AppService],

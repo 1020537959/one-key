@@ -1,18 +1,14 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { AppService } from './app.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import Web3 from 'web3';
 import { EthBalanceEventDto } from './modules/dto/eth-balance-event.dto';
-
-// 模拟版本
-let version = 1;
 
 @ApiTags('默认')
 @Controller()
 export class AppController {
   constructor(
     private readonly appService: AppService,
-    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   @Get('health')
@@ -23,17 +19,14 @@ export class AppController {
   @ApiOperation({ summary: '模拟ETH 余额变更事件' })
   @Get('v1/event')
   async simulateEvent(@Query() dto: EthBalanceEventDto) {
-    const { address, user_id, eth_balance } = dto;
-    this.eventEmitter.emit(
-      `eth_balance.${address}`,
-      {
-        address,
-        // 正常可能不会带有用户ID
-        user_id,
-        eth_balance,
-        timestamp: Date.now(),
-        version: String(version++).padStart(8, '0'),
-      }
-    );
+    const { from, to, eth } = dto;
+    const web3 = new Web3(new Web3.providers.HttpProvider("http://127.0.0.1:7545"));
+    // 发送一个交易
+    const result = await web3.eth.sendTransaction({
+      from,
+      to,
+      value: web3.utils.toWei(eth, 'ether')
+    });
+    console.debug('发送交易结果', result);
   }
 }

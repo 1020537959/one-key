@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 
-export class UserEntity {
+export class UserAddressEntity {
   @ApiProperty({ type: Number, description: '主键' })
   id: number;
 

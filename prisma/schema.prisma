@@ -9,18 +9,10 @@ datasource db {
   relationMode = "prisma"
 }
 
-model User {
-  id   Int    @id @default(autoincrement())
-  name String @db.VarChar(50)
-
-  @@map("tbl_user")
-}
-
 model UserAddress {
   id          Int    @id @default(autoincrement())
   address     String @unique(map: "uniAddress") @db.VarChar(50)
-  user_id     Int
-  eth_balance String @default("0") @db.VarChar(50)
+  eth_balance String @default("'0'") @db.VarChar(50)
 
   @@map("tbl_user_address")
 }
