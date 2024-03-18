@@ -28,7 +28,7 @@ export class UserAddressService {
   }
 
   /**
-   * 设置 ETH 余额缓存
+   * 设置 ETH 余额缓存（20-40秒随机过期时间）
    * @param address 用户地址
    * @param eth_balance ETH 余额
    */
@@ -117,6 +117,7 @@ export class UserAddressService {
     const { from, to } = transaction;
     const [fromEthBalance, toEthBalance] = await Promise.all([
       this.ethGetBalance(from),
+      // TODO to不一定是用户地址
       this.ethGetBalance(to),
     ]);
     await this.prisma.$transaction(async (prisma) => {

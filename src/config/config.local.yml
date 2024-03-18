@@ -13,5 +13,8 @@ redis:
     password: ""
     db: 0
 
+kafka:
+  url: localhost:9092
+
 etherscan:
   apikey: "MPSF6BYBM41UU565TX3CK6TWVNDMABKHH5"
