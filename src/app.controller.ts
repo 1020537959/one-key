@@ -1,4 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import Web3 from 'web3';
@@ -12,6 +13,7 @@ export class AppController {
   constructor(
     private readonly appService: AppService,
     private readonly logger: Logger,
+    private readonly config: ConfigService,
   ) {}
 
   @Get('health')
@@ -23,8 +25,9 @@ export class AppController {
   @Get('v1/event')
   async simulateEvent(@Query() dto: EthBalanceEventDto) {
     const { from, to, eth } = dto;
+    const { host, port } = this.config.get('etherscan');
     const web3 = new Web3(
-      new Web3.providers.HttpProvider('http://127.0.0.1:7545'),
+      new Web3.providers.HttpProvider(`http://${host}:${port}`),
     );
     // 发送一个交易
     const result = await web3.eth.sendTransaction({

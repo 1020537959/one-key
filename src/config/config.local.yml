@@ -17,4 +17,6 @@ kafka:
   url: localhost:9092
 
 etherscan:
+  host: "127.0.0.1"
+  port: "7545"
   apikey: "MPSF6BYBM41UU565TX3CK6TWVNDMABKHH5"

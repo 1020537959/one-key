@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { OnEvent } from '@nestjs/event-emitter';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Redis } from 'ioredis';
@@ -10,15 +11,21 @@ import { REDIS } from '../../common/constants';
 import { HandleEthBalanceEventDto } from '../dto/eth-balance-event.dto';
 import { SearchEthBalanceDto } from './dto/search-eth-balance.dto';
 
-const web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:7545'));
-
 @Injectable()
 export class UserAddressService {
+  web3: Web3;
+
   constructor(
     private readonly prisma: PrismaService,
     @InjectRedis() private readonly redis: Redis,
     private readonly logger: Logger,
-  ) {}
+    private readonly config: ConfigService,
+  ) {
+    const { host, port } = this.config.get('etherscan');
+    this.web3 = new Web3(
+      new Web3.providers.HttpProvider(`http://${host}:${port}`),
+    );
+  }
 
   /**
    * 获取 ETH 余额缓存
@@ -118,7 +125,7 @@ export class UserAddressService {
   async handleEthBalanceEvent(payload: HandleEthBalanceEventDto) {
     this.logger.debug('【pendingTransactions】', payload);
     const { transactionHash } = payload;
-    const transaction = await web3.eth.getTransaction(transactionHash);
+    const transaction = await this.web3.eth.getTransaction(transactionHash);
     this.logger.debug('【transaction】', transaction);
     const { from, to } = transaction;
     const [fromEthBalance, toEthBalance] = await Promise.all([
@@ -151,7 +158,7 @@ export class UserAddressService {
    * @param address 用户地址
    */
   async ethGetBalance(address: string): Promise<string> {
-    const eth_balance = await web3.eth.getBalance(address);
+    const eth_balance = await this.web3.eth.getBalance(address);
     return String(eth_balance);
   }
 }
