@@ -27,6 +27,10 @@ export class UserAddressService {
     );
   }
 
+  get _selectAttributes() {
+    return { id: true, address: true, user_id: true, eth_balance: true };
+  }
+
   /**
    * 获取 ETH 余额缓存
    * @param address 用户地址
@@ -57,9 +61,15 @@ export class UserAddressService {
   /**
    * 详情
    * @param address 用户地址
+   * @param options 可选项
    */
-  async findOneByQuery(address: string) {
+  async findOneByQuery(
+    address: string,
+    options?: { select: { eth_balance: boolean } },
+  ) {
+    const { select = this._selectAttributes } = options || {};
     const userAddress = await this.prisma.userAddress.findUnique({
+      select,
       where: { address },
     });
     if (!userAddress)
@@ -97,13 +107,9 @@ export class UserAddressService {
       } else {
         // 获取数据库余额并返回
         try {
-          const userAddress = await this.prisma.userAddress.findUnique({
+          const userAddress = await this.findOneByQuery(address, {
             select: { eth_balance: true },
-            where: { address },
           });
-          if (!userAddress) {
-            throw new HttpException('用户地址错误', HttpStatus.NOT_FOUND);
-          }
           eth_balance = userAddress.eth_balance;
           // 设置缓存
           this._setEthBalanceCache(address, eth_balance).catch((err) => {
