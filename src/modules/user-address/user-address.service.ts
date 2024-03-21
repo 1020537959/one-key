@@ -125,32 +125,40 @@ export class UserAddressService {
   async handleEthBalanceEvent(payload: HandleEthBalanceEventDto) {
     this.logger.debug('【pendingTransactions】', payload);
     const { transactionHash } = payload;
-    const transaction = await this.web3.eth.getTransaction(transactionHash);
-    this.logger.debug('【transaction】', transaction);
-    const { from, to } = transaction;
-    const [fromEthBalance, toEthBalance] = await Promise.all([
-      this.ethGetBalance(from),
-      // TODO to不一定是用户地址
-      this.ethGetBalance(to),
-    ]);
-    await this.prisma.$transaction(async (prisma) => {
-      await prisma.userAddress.upsert({
-        where: { address: from },
-        update: { eth_balance: fromEthBalance },
-        create: { address: from, eth_balance: fromEthBalance },
+    const timerId = setInterval(async () => {
+      const transaction =
+        await this.web3.eth.getTransactionReceipt(transactionHash);
+      if (!transaction) return;
+      this.logger.debug('【transaction】', transaction);
+      const { from, to } = transaction;
+      const [fromEthBalance, toEthBalance] = await Promise.all([
+        this.ethGetBalance(from),
+        // TODO to不一定是用户地址
+        this.ethGetBalance(to),
+      ]);
+      await this.prisma.$transaction(async (prisma) => {
+        await prisma.userAddress.upsert({
+          where: { address: from },
+          update: { eth_balance: fromEthBalance },
+          create: { address: from, eth_balance: fromEthBalance },
+        });
+        await prisma.userAddress.upsert({
+          where: { address: to },
+          update: { eth_balance: toEthBalance },
+          create: { address: to, eth_balance: toEthBalance },
+        });
       });
-      await prisma.userAddress.upsert({
-        where: { address: to },
-        update: { eth_balance: toEthBalance },
-        create: { address: to, eth_balance: toEthBalance },
+      this._setEthBalanceCache(from, fromEthBalance).catch((err) => {
+        this.logger.error(`【${from}】设置余额缓存异常, ${err}`);
       });
-    });
-    this._setEthBalanceCache(from, fromEthBalance).catch((err) => {
-      this.logger.error(`【${from}】设置余额缓存异常, ${err}`);
-    });
-    this._setEthBalanceCache(to, toEthBalance).catch((err) => {
-      this.logger.error(`【${to}】设置余额缓存异常, ${err}`);
-    });
+      this._setEthBalanceCache(to, toEthBalance).catch((err) => {
+        this.logger.error(`【${to}】设置余额缓存异常, ${err}`);
+      });
+      // 交易完成时清除定时器
+      if (transaction) {
+        clearInterval(timerId);
+      }
+    }, 10);
   }
 
   /**
