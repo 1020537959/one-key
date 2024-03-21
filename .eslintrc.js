@@ -28,7 +28,6 @@ module.exports = {
     semi: [2, 'always'],
     'simple-import-sort/imports': 'error',
     'simple-import-sort/exports': 'error',
-    '@typescript-eslint/no-var-requires': 0,
-    '@typescript-eslint/no-var-requires': 0,
+    'no-console': 'error',
   },
 };

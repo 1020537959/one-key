@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import RedLock from 'redlock';
-
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Redis } from 'ioredis';
+import RedLock from 'redlock';
 import { REDIS } from 'src/common/constants';
 
 @Injectable()

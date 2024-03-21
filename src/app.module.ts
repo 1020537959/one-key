@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { RedisModule } from '@nestjs-modules/ioredis';
+import { LoggerModule } from 'nestjs-pino';
+import { PrismaModule } from 'nestjs-prisma';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { userUserModule } from './modules/user-address/user-address.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config/index';
-import { PrismaModule } from 'nestjs-prisma';
-import { RedisModule } from '@nestjs-modules/ioredis';
-import { EventEmitterModule } from '@nestjs/event-emitter';
 import { SharedModule } from './modules/shared/shared.modules';
+import { userUserModule } from './modules/user-address/user-address.module';
 
 @Module({
   imports: [
@@ -53,9 +55,25 @@ import { SharedModule } from './modules/shared/shared.modules';
       },
       inject: [ConfigService],
     }),
+    LoggerModule.forRoot({
+      pinoHttp: {
+        formatters: {
+          level: (label) => {
+            return { level: label };
+          },
+        },
+        level: process.env.NODE_ENV !== 'prod' ? 'debug' : 'info', // 正式环境使用info等级，测试环境使用debug等级
+        autoLogging: false, // 关闭自动req、res日志，如果开启，将对请求和响应进行日志记录
+        quietReqLogger: true,
+        transport:
+          process.env.NODE_ENV !== 'prod'
+            ? { target: 'pino-pretty' }
+            : undefined, // 正式环境开启 json格式输出，非正式环境pretty输出
+      },
+    }),
     SharedModule,
     EventEmitterModule.forRoot({ wildcard: true }),
-    userUserModule
+    userUserModule,
   ],
   controllers: [AppController],
   providers: [AppService],

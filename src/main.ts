@@ -1,14 +1,16 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { TransformInterceptor } from './common/interception';
 import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { logLevel } from 'kafkajs';
+import { Logger } from 'nestjs-pino';
+
+import { AppModule } from './app.module';
+import { TransformInterceptor } from './common/interception';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const config = app.get(ConfigService)
+  const config = app.get(ConfigService);
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -37,9 +39,12 @@ async function bootstrap() {
       },
     },
   });
+  // 日志
+  const logger = app.get(Logger);
+  app.useLogger(logger);
 
   app.startAllMicroservices().catch((err) => {
-    console.error(
+    this.logger.error(
       `微服务启动失败：${err}。kafka配置：${JSON.stringify(kafkaConfig)}`,
     );
   });
