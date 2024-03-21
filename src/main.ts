@@ -2,6 +2,8 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as fs from 'fs';
 import { logLevel } from 'kafkajs';
 import { Logger } from 'nestjs-pino';
 
@@ -39,6 +41,25 @@ async function bootstrap() {
       },
     },
   });
+  // swagger文档
+  const swaggerOptions = new DocumentBuilder()
+    .setTitle('oneKey服务API文档')
+    .setVersion('1.0.0')
+    .addBearerAuth({ in: 'header', type: 'http' })
+    .build();
+
+  // 使用controller名称作为sdk操作名称
+  const operationIdFactory = {
+    operationIdFactory: (c: string, method: string) => method,
+  };
+  const document = SwaggerModule.createDocument(
+    app,
+    swaggerOptions,
+    operationIdFactory,
+  );
+  const documentStr = JSON.stringify(document);
+  fs.writeFileSync('./openapi.json', documentStr);
+  SwaggerModule.setup('docs', app, document);
   // 日志
   const logger = app.get(Logger);
   app.useLogger(logger);
